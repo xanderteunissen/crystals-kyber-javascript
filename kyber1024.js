@@ -165,7 +165,7 @@ Decrypt1024 = function(c, privateKey) {
         const hash3 = new SHAKE(256);
         hash3.update(buffer4).update(buffer5);
         ss = hash3.digest();
-    } 
+    }
     else{
         // hash z and ch with SHAKE-256
         const buffer6 = Buffer.from(z);
@@ -240,7 +240,7 @@ function indcpaKeyGen() {
     for (let i = 0; i < paramsK; i++) {
         pk[i] = add(pk[i], e[i]);
     }
-    
+
     // barrett reduction
     for (let i = 0; i < paramsK; i++) {
         pk[i] = reduce(pk[i]);
@@ -248,7 +248,7 @@ function indcpaKeyGen() {
 
     // ENCODE KEYS
     let keys = new Array(2);
-    
+
     // PUBLIC KEY
     // turn polynomials into byte arrays
     keys[0] = [];
@@ -526,7 +526,7 @@ function generateMatrixA(seed, transposed) {
                 let missing = result1[0]; // here is additional mod q polynomial coefficients
                 let ctrn = result1[1]; // how many coefficients were accepted and are in the output
                 // starting at last position of output array from first sampling function until 256 is reached
-                for (let k = ctr; k < paramsN; k++) { 
+                for (let k = ctr; k < paramsN; k++) {
                     a[i][j][k] = missing[k-ctr]; // fill rest of array with the additional coefficients until full
                 }
                 ctr = ctr + ctrn; // update index
@@ -566,7 +566,7 @@ function indcpaRejUniform(buf, bufl, len) {
             ctr = ctr + 1;
         }
 
-        
+
     }
 
     let result = new Array(2);
@@ -605,7 +605,7 @@ function prf(l, key, nonce) {
 function byteopsCbd(buf) {
     let t, d;
     let a, b;
-    let r = new Array(384).fill(0); 
+    let r = new Array(384).fill(0);
     for (let i = 0; i < paramsN / 8; i++) {
         t = (byteopsLoad32(buf.slice(4 * i, buf.length)) >>> 0);
         d = ((t & 0x55555555) >>> 0);
@@ -638,7 +638,7 @@ function ntt(r) {
     let t;
     // 128, 64, 32, 16, 8, 4, 2
     for (let l = 128; l >= 2; l >>= 1) {
-        // 0, 
+        // 0,
         for (let start = 0; start < 256; start = j + l) {
             zeta = nttZetas[k];
             k = k + 1;
@@ -650,7 +650,7 @@ function ntt(r) {
                 r[j + l] = r[j] - t;
                 // add t back again to the opposite subsection
                 r[j] = r[j] + t;
-                
+
             }
         }
     }
@@ -912,12 +912,12 @@ function byte(n) {
     return n;
 }
 
-/* 
+/*
 // not needed, just here for reference
 function int8(n){
     let end = -128;
     let start = 127;
-    
+
     if( n >= end && n <= start){
         return n;
     }
@@ -1019,7 +1019,7 @@ Test1024 = function(){
     // sk, ct, ss
 
     let fs = require('fs');
-    let textByLine = fs.readFileSync('./node_modules/crystals-kyber/PQCkemKAT_3168.rsp').toString().split("\n");
+    let textByLine = fs.readFileSync('./PQCkemKAT_3168.rsp').toString().split("\n");
 
     // console.log(textByLine.length); // seems to be an array of strings (lines)
     let sk100 = [];
