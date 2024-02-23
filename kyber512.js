@@ -1,7 +1,13 @@
 /*****************************************************************************************************************************/
 // imports
-const { SHA3, SHAKE } = require('sha3');
-const webcrypto = require('crypto').webcrypto;
+const isNode = (typeof self === 'undefined');
+const webcrypto = isNode ? require('crypto').webcrypto : self.crypto;
+const SHA3 = isNode ? require('js-sha3') : null;
+
+const _sha3_256 = isNode ? SHA3.sha3_256 : sha3_256;
+const _sha3_512 = isNode ? SHA3.sha3_512 : sha3_512;
+const _shake128 = isNode ? SHA3.shake128 : shake128;
+const _shake256 = isNode ? SHA3.shake256 : shake256;
 /*****************************************************************************************************************************/
 const nttZetas = [
     2285, 2571, 2970, 1812, 1493, 1422, 287, 202, 3158, 622, 1577, 182, 962,
@@ -47,9 +53,8 @@ KeyGen512 = function() {
     // FO transform to make IND-CCA2
 
     // get hash of pk
-    const buffer1 = Buffer.from(pk);
-    const hash1 = new SHA3(256);
-    hash1.update(buffer1);
+    const hash1 = _sha3_256.create();
+    hash1.update(pk);
     let pkh = hash1.digest();
 
     // read 32 random values (0-255) into a 32 byte array
@@ -76,27 +81,23 @@ KeyGen512 = function() {
 // 2. Encrypt
 Encrypt512 = function(pk){
 
-    // random 32 bytes
+    // random 32 bytes m
     let m = new Uint8Array(32);
     webcrypto.getRandomValues(m); // web api cryptographically strong random values
 
     // hash m with SHA3-256
-    const buffer1 = Buffer.from(m);
-    const hash1 = new SHA3(256);
-    hash1.update(buffer1);
+    const hash1 = _sha3_256.create();
+    hash1.update(m);
     let mh = hash1.digest();
 
     // hash pk with SHA3-256
-    const buffer2 = Buffer.from(pk);
-    const hash2 = new SHA3(256);
-    hash2.update(buffer2);
+    const hash2 = _sha3_256.create();
+    hash2.update(pk);
     let pkh = hash2.digest();
 
     // hash mh and pkh with SHA3-512
-    const buffer3 = Buffer.from(mh);
-    const buffer4 = Buffer.from(pkh);
-    const hash3 = new SHA3(512);
-    hash3.update(buffer3).update(buffer4);
+    const hash3 = _sha3_512.create();
+    hash3.update(mh).update(pkh);
     let kr = new Uint8Array(hash3.digest());
     let kr1 = kr.slice(0, 32);
     let kr2 = kr.slice(32, 64);
@@ -105,16 +106,13 @@ Encrypt512 = function(pk){
     let c = indcpaEncrypt(pk, mh, kr2);
 
     // hash ciphertext with SHA3-256
-    const buffer5 = Buffer.from(c);
-    const hash4 = new SHA3(256);
-    hash4.update(buffer5);
+    const hash4 = _sha3_256.create();
+    hash4.update(c);
     let ch = hash4.digest();
 
     // hash kr1 and ch with SHAKE-256
-    const buffer6 = Buffer.from(kr1);
-    const buffer7 = Buffer.from(ch);
-    const hash5 = new SHAKE(256);
-    hash5.update(buffer6).update(buffer7);
+    const hash5 = _shake256.create(256);
+    hash5.update(kr1).update(ch);
     let ss = hash5.digest();
 
     // output (c, ss)
@@ -138,10 +136,8 @@ Decrypt512 = function(c, privateKey) {
     let m = indcpaDecrypt(c, sk);
 
     // hash m and pkh with SHA3-512
-    const buffer1 = Buffer.from(m);
-    const buffer2 = Buffer.from(pkh);
-    const hash1 = new SHA3(512);
-    hash1.update(buffer1).update(buffer2);
+    const hash1 = _sha3_512.create();
+    hash1.update(m).update(pkh);
     let kr = new Uint8Array(hash1.digest());
     let kr1 = kr.slice(0, 32);
     let kr2 = kr.slice(32, 64);
@@ -153,26 +149,21 @@ Decrypt512 = function(c, privateKey) {
     let fail = ArrayCompare(c, cmp) - 1;
 
     // hash c with SHA3-256
-    const buffer3 = Buffer.from(c);
-    const hash2 = new SHA3(256);
-    hash2.update(buffer3);
+    const hash2 = _sha3_256.create();
+    hash2.update(c);
     let ch = hash2.digest();
 
     let ss = [];
     if (!fail){
         // hash kr1 and ch with SHAKE-256
-        const buffer4 = Buffer.from(kr1);
-        const buffer5 = Buffer.from(ch);
-        const hash3 = new SHAKE(256);
-        hash3.update(buffer4).update(buffer5);
+        const hash3 = _shake256.create(256);
+        hash3.update(kr1).update(ch);
         ss = hash3.digest();
     }
     else{
         // hash z and ch with SHAKE-256
-        const buffer6 = Buffer.from(z);
-        const buffer7 = Buffer.from(ch);
-        const hash4 = new SHAKE(256);
-        hash4.update(buffer6).update(buffer7);
+        const hash4 = _shake256.create(256);
+        hash4.update(z).update(ch);
         ss = hash4.digest();
     }
     return ss;
@@ -187,9 +178,8 @@ function indcpaKeyGen() {
     webcrypto.getRandomValues(rnd); // web api cryptographically strong random values
 
     // hash rnd with SHA3-512
-    const buffer1 = Buffer.from(rnd);
-    const hash1 = new SHA3(512);
-    hash1.update(buffer1);
+    const hash1 = _sha3_512.create();
+    hash1.update(rnd);
     let seed = new Uint8Array(hash1.digest());
     let publicSeed = seed.slice(0, 32);
     let noiseSeed = seed.slice(32, 64);
@@ -490,8 +480,6 @@ function polyFromMsg(msg) {
 // Performs rejection sampling on the output of an extendable-output function (XOF).
 function generateMatrixA(seed, transposed) {
     let a = new Array(paramsK);
-    let output = new Array(3 * 168);
-    const xof = new SHAKE(128);
     let ctr = 0;
     for (let i = 0; i < paramsK; i++) {
 
@@ -510,14 +498,12 @@ function generateMatrixA(seed, transposed) {
 
             // obtain xof of (seed+i+j) or (seed+j+i) depending on above code
             // output is 672 bytes in length
-            xof.reset();
-            const buffer1 = Buffer.from(seed);
-            const buffer2 = Buffer.from(transpose);
-            xof.update(buffer1).update(buffer2);
-            let output = new Uint8Array(xof.digest({ buffer: Buffer.alloc(672)}));
+            const xof = _shake128.create(672*8);
+            xof.update(seed).update(transpose);
+            let output = new Uint8Array(xof.digest());
 
             // run rejection sampling on the output from above
-            let outputlen = 3 * 168;
+            let outputlen = 3 * 168; // 504
             let result = new Array(2);
             result = indcpaRejUniform(output.slice(0,504), outputlen, paramsN);
             a[i][j] = result[0]; // the result here is an NTT-representation
@@ -605,12 +591,9 @@ function sample2(seed, nonce) {
 function prf(l, key, nonce) {
     let nonce_arr = new Array(1);
     nonce_arr[0] = nonce;
-    const hash = new SHAKE(256);
-    hash.reset();
-    const buffer1 = Buffer.from(key);
-    const buffer2 = Buffer.from(nonce_arr);
-    hash.update(buffer1).update(buffer2);
-    let buf = hash.digest({ buffer: Buffer.alloc(l)}); // 128 long byte array
+    const hash = _shake256.create(l*8);
+    hash.update(key).update(nonce_arr);
+    let buf = hash.digest();
     return buf;
 }
 
@@ -882,7 +865,7 @@ function compress2(v) {
 
 // decompress1 de-serializes and decompresses a vector of polynomials and
 // represents the approximate inverse of compress1. Since compression is lossy,
-// the results of decompression will may not match the original vector of polynomials.
+// the results of decompression may not match the original vector of polynomials.
 function decompress1(a) {
     let r = new Array(paramsK);
     for (let i = 0; i < paramsK; i++) {

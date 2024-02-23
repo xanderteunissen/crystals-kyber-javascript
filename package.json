@@ -12,6 +12,6 @@
         "javascript"
     ],
     "dependencies": {
-        "sha3": "^2.1.4"
+        "js-sha3": "^0.9.3"
     }
 }
