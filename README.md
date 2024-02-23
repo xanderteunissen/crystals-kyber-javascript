@@ -6,9 +6,9 @@
 
 **CRYSTALS-KYBER** is a post-quantum key exchange protocol.
 
-This protocol is used to securely establish symmetric keys between two parties. 
+This protocol is used to securely establish symmetric keys between two parties.
 
-This JavaScript implementation is intended for client-side web browser applications and server-side backends in Node.js frameworks.
+This JavaScript implementation is intended for client-side web browser applications and server-side backends in Node.js frameworks. It was forked from [here](https://github.com/antontutoveanu/crystals-kyber-javascript).
 
 Most of this code was translated from a Go implementation of Kyber which can be found [here](https://github.com/symbolicsoft/kyber-k2so).
 
@@ -70,7 +70,7 @@ Test run [ 96 ] success
 Test run [ 97 ] success
 Test run [ 98 ] success
 Test run [ 99 ] success
- 
+
 All test runs successful.
 
 ss1 <Buffer cd c4 7d 83 2b 49 5d 82 3c 08 34 ea 12 f0 4a 8f 5c 4c d6 19 b1 79 85 71 d6 b2 a7 c9 3f ac cc d1>
