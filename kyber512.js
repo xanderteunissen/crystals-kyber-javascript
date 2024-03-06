@@ -43,9 +43,9 @@ const paramsETA2 = 2;
 // CRYSTALS-KYBER JAVASCRIPT
 
 // 1. KeyGen
-KeyGen512 = function() {
+KeyGen512 = function(seed) { // Seed - 64 byte array (Uint8Array(64))
     // IND-CPA keypair
-    let indcpakeys = indcpaKeyGen();
+    let indcpakeys = indcpaKeyGen(seed ? seed.slice(0, 32) : null);
 
     let pk = indcpakeys[0];
     let sk = indcpakeys[1];
@@ -57,8 +57,16 @@ KeyGen512 = function() {
     hash1.update(pk);
     let pkh = hash1.digest();
 
-    // read 32 random values (0-255) into a 32 byte array
-    let rnd = new Uint8Array(32);
+    let rnd;
+
+    if (!seed || seed.length < 64) {
+        // read 32 random values (0-255) into a 32 byte array
+        rnd = new Uint8Array(32);
+    } else {
+        // use seed
+        rnd = seed.slice(32, 64)
+    }
+
     webcrypto.getRandomValues(rnd); // web api cryptographically strong random values
 
     // concatenate to form IND-CCA2 private key: sk + pk + h(pk) + rnd
@@ -171,18 +179,20 @@ Decrypt512 = function(c, privateKey) {
 /*****************************************************************************************************************************/
 // indcpaKeyGen generates public and private keys for the CPA-secure
 // public-key encryption scheme underlying Kyber.
-function indcpaKeyGen() {
+function indcpaKeyGen(seed) {
 
-    // random bytes for seed
-    let rnd = new Uint8Array(32);
-    webcrypto.getRandomValues(rnd); // web api cryptographically strong random values
+    // user-provided seed or random bytes
+    let rnd = seed ? seed : new Uint8Array(32);
+    if (!seed || seed.length < 32) {
+        webcrypto.getRandomValues(rnd); // web api cryptographically strong random values
+    }
 
     // hash rnd with SHA3-512
     const hash1 = _sha3_512.create();
     hash1.update(rnd);
-    let seed = new Uint8Array(hash1.digest());
-    let publicSeed = seed.slice(0, 32);
-    let noiseSeed = seed.slice(32, 64);
+    let newSeed = new Uint8Array(hash1.digest());
+    let publicSeed = newSeed.slice(0, 32);
+    let noiseSeed = newSeed.slice(32, 64);
 
     // generate public matrix A (already in NTT form)
     let a = generateMatrixA(publicSeed, false, paramsK);
@@ -1115,6 +1125,25 @@ Test512 = function(){
 
     // returns 1 if both symmetric keys are the same
     console.log(ArrayCompare(ss1, ss2));
+
+    // Ditto for seeded keys
+    let arr_sd = new Uint8Array(64);
+    let pk_sk_sd = KeyGen512(arr_sd);
+    let pk_sd = pk_sk_sd[0];
+    let sk_sd = pk_sk_sd[1];
+
+    let c_ss_sd = Encrypt512(pk_sd);
+    let c_sd = c_ss_sd[0];
+    let ss1_sd = c_ss_sd[1];
+
+    let ss2_sd = Decrypt512(c_sd, sk_sd);
+
+    console.log();
+    console.log("ss1_sd", ss1_sd);
+    console.log("ss2_sd",ss2_sd);
+
+    console.log(ArrayCompare(ss1_sd, ss2_sd));
+
     return
 }
 
