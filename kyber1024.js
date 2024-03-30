@@ -1125,8 +1125,10 @@ Test1024 = function(){
     return
 }
 
-// Export functions to index.js (entry point)
-exports.KeyGen1024 = KeyGen1024;
-exports.Encrypt1024 = Encrypt1024;
-exports.Decrypt1024 = Decrypt1024;
-exports.Test1024 = Test1024;
+if (isNode) {
+    // Export functions to index.js (entry point)
+    exports.KeyGen1024 = KeyGen1024;
+    exports.Encrypt1024 = Encrypt1024;
+    exports.Decrypt1024 = Decrypt1024;
+    exports.Test1024 = Test1024;
+}

@@ -1107,8 +1107,10 @@ Test768 = function(){
     return
 }
 
-// Export functions to index.js (entry point)
-exports.KeyGen768 = KeyGen768;
-exports.Encrypt768 = Encrypt768;
-exports.Decrypt768 = Decrypt768;
-exports.Test768 = Test768;
+if (isNode) {
+    // Export functions to index.js (entry point)
+    exports.KeyGen768 = KeyGen768;
+    exports.Encrypt768 = Encrypt768;
+    exports.Decrypt768 = Decrypt768;
+    exports.Test768 = Test768;
+}
