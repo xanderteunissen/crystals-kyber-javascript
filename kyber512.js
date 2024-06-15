@@ -473,17 +473,22 @@ function polyToMsg(a) {
 // polyFromMsg converts a 32-byte message to a polynomial.
 function polyFromMsg(msg) {
     let r = new Array(384).fill(0); // each element is int16 (0-65535)
-    let mask; // int16
     for (let i = 0; i < paramsN / 8; i++) {
         for (let j = 0; j < 8; j++) {
-            mask = -1 * int16((msg[i] >> j) & 1);
-            r[8 * i + j] = mask & int16((paramsQ + 1) / 2);
+            r[8 * i + j] = 0;
+            r[8 * i + j] = cmov_int16(r + 8 * i + j, ((paramsQ + 1) / 2), (msg[i] >> j) & 1);
         }
     }
     return r;
 }
 
+// Copy v to r if b is 1, don't modify r if b is 0. Requires b to be in {0,1}.
+function cmov_int16(r, v, b) {
+    b = -uint16(b);
+    r ^= b & (int16(r) ^ int16(v));
 
+    return r;
+}
 
 // generateMatrixA deterministically generates a matrix `A` (or the transpose of `A`)
 // from a seed. Entries of the matrix are polynomials that look uniformly random.
