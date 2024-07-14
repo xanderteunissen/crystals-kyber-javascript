@@ -333,7 +333,7 @@ function indcpaEncrypt(pk1, msg, coins) {
 
     // calculate A.r
     let u = new Array(paramsK);
-    for (i = 0; i < paramsK; i++) {
+    for (let i = 0; i < paramsK; i++) {
         u[i] = multiply(at[i], r);
     }
 
